@@ -1,10 +1,13 @@
 # myNew
 
-## 이름
-- 한승혁
-## 나를 표현하는 키워드
-```python
-print('Hello World!')
-```
+## Name
+- Seunghyuk Han
 
+## Email
+- hyuk08@aediastudio.com
 
+## Phone
+- 010-7663-1707
+
+## IG
+- @40962160_
