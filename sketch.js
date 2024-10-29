@@ -1,126 +1,114 @@
-let circleX = 200;
-let circleY = 150;
-let circleRadius = 75;
-
-let graphX = 50;
-let graphY = 300;
-let graphAmplitude = 50;
-let graphPeriod = 300;
+let cellSize = 20;
+let columnCount;
+let rowCount;
+let currentCells = [];
+let nextCells = [];
 
 function setup() {
-  createCanvas(400, 400);
-  angleMode(DEGREES);
+  // Set simulation framerate to 10 to avoid flickering
+  frameRate(10);
+  createCanvas(720, 400);
+
+  // Calculate columns and rows
+  columnCount = floor(width / cellSize);
+  rowCount = floor(height / cellSize);
+
+  // Set each column in current cells to an empty array
+  // This allows cells to be added to this array
+  // The index of the cell will be its row number
+  for (let column = 0; column < columnCount; column++) {
+    currentCells[column] = [];
+  }
+
+  // Repeat the same process for the next cells
+  for (let column = 0; column < columnCount; column++) {
+    nextCells[column] = [];
+  }
+
+  noLoop();
   describe(
-    'Animated demonstration of a point moving around the unit circle, together with the corresponding sine and cosine values moving along their graphs.'
+    "Grid of squares that switch between white and black, demonstrating a simulation of John Conway's Game of Life. When clicked, the simulation resets."
   );
 }
 
 function draw() {
-  background(0);
+  generate();
+  for (let column = 0; column < columnCount; column++) {
+    for (let row = 0; row < rowCount; row++) {
+      // Get cell value (0 or 1)
+      let cell = currentCells[column][row];
 
-  // Set angle based on frameCount, and display current value
-
-  let angle = frameCount % 360;
-
-  fill(255);
-  textSize(20);
-  textAlign(LEFT, CENTER);
-  text(`angle: ${angle}`, 25, 25);
-
-  // Draw circle and diameters
-
-  noFill();
-  stroke(128);
-  strokeWeight(3);
-  circle(circleX, circleY, 2 * circleRadius);
-  line(circleX, circleY - circleRadius, circleX, circleY + circleRadius);
-  line(circleX - circleRadius, circleY, circleX + circleRadius, circleY);
-
-  // Draw moving points
-
-  let pointX = circleX + circleRadius * cos(angle);
-  let pointY = circleY - circleRadius * sin(angle);
-
-  line(circleX, circleY, pointX, pointY);
-
-  noStroke();
-
-  fill('white');
-  circle(pointX, pointY, 10);
-
-  fill('orange');
-  circle(pointX, circleY, 10);
-
-  fill('red');
-  circle(circleX, pointY, 10);
-
-  // Draw graph
-
-  stroke('grey');
-  strokeWeight(3);
-  line(graphX, graphY, graphX + 300, graphY);
-  line(graphX, graphY - graphAmplitude, graphX, graphY + graphAmplitude);
-  line(
-    graphX + graphPeriod,
-    graphY - graphAmplitude,
-    graphX + graphPeriod,
-    graphY + graphAmplitude
-  );
-
-  fill('grey');
-  strokeWeight(1);
-  textAlign(CENTER, CENTER);
-  text('0', graphX, graphY + graphAmplitude + 20);
-  text('360', graphX + graphPeriod, graphY + graphAmplitude + 20);
-  text('1', graphX / 2, graphY - graphAmplitude);
-  text('0', graphX / 2, graphY);
-  text('-1', graphX / 2, graphY + graphAmplitude);
-
-  fill('orange');
-  text('cos', graphX + graphPeriod + graphX / 2, graphY - graphAmplitude);
-  fill('red');
-  text('sin', graphX + graphPeriod + graphX / 2, graphY);
-
-  // Draw cosine curve
-
-  noFill();
-  stroke('orange');
-  beginShape();
-  for (let t = 0; t <= 360; t++) {
-    let x = map(t, 0, 360, graphX, graphX + graphPeriod);
-    let y = graphY - graphAmplitude * cos(t);
-    vertex(x, y);
+      // Convert cell value to get black (0) for alive or white (255 (white) for dead
+      fill((1 - cell) * 255);
+      stroke(0);
+      rect(column * cellSize, row * cellSize, cellSize, cellSize);
+    }
   }
-  endShape();
+}
 
-  // Draw sine curve
+// Reset board when mouse is pressed
+function mousePressed() {
+  randomizeBoard();
+  loop();
+}
 
-  noFill();
-  stroke('red');
-  beginShape();
-  for (let t = 0; t <= 360; t++) {
-    let x = map(t, 0, 360, graphX, graphX + graphPeriod);
-    let y = graphY - graphAmplitude * sin(t);
-    vertex(x, y);
+// Fill board randomly
+function randomizeBoard() {
+  for (let column = 0; column < columnCount; column++) {
+    for (let row = 0; row < rowCount; row++) {
+      // Randomly select value of either 0 (dead) or 1 (alive)
+      currentCells[column][row] = random([0, 1]);
+    }
   }
-  endShape();
+}
 
-  // Draw moving line
+// Create a new generation
+function generate() {
+  // Loop through every spot in our 2D array and count living neighbors
+  for (let column = 0; column < columnCount; column++) {
+    for (let row = 0; row < rowCount; row++) {
+      // Column left of current cell
+      // if column is at left edge, use modulus to wrap to right edge
+      let left = (column - 1 + columnCount) % columnCount;
 
-  let lineX = map(angle, 0, 360, graphX, graphX + graphPeriod);
-  stroke('grey');
-  line(lineX, graphY - graphAmplitude, lineX, graphY + graphAmplitude);
+      // Column right of current cell
+      // if column is at right edge, use modulus to wrap to left edge
+      let right = (column + 1) % columnCount;
 
-  // Draw moving points on graph
+      // Row above current cell
+      // if row is at top edge, use modulus to wrap to bottom edge
+      let above = (row - 1 + rowCount) % rowCount;
 
-  let orangeY = graphY - graphAmplitude * cos(angle);
-  let redY = graphY - graphAmplitude * sin(angle);
+      // Row below current cell
+      // if row is at bottom edge, use modulus to wrap to top edge
+      let below = (row + 1) % rowCount;
 
-  noStroke();
+      // Count living neighbors surrounding current cell
+      let neighbours =
+        currentCells[left][above] +
+        currentCells[column][above] +
+        currentCells[right][above] +
+        currentCells[left][row] +
+        currentCells[right][row] +
+        currentCells[left][below] +
+        currentCells[column][below] +
+        currentCells[right][below];
 
-  fill('orange');
-  circle(lineX, orangeY, 10);
+      // Rules of Life
+      // 1. Any live cell with fewer than two live neighbours dies
+      // 2. Any live cell with more than three live neighbours dies
+      if (neighbours < 2 || neighbours > 3) {
+        nextCells[column][row] = 0;
+        // 4. Any dead cell with exactly three live neighbours will come to life.
+      } else if (neighbours === 3) {
+        nextCells[column][row] = 1;
+        // 3. Any live cell with two or three live neighbours lives, unchanged, to the next generation.
+      } else nextCells[column][row] = currentCells[column][row];
+    }
+  }
 
-  fill('red');
-  circle(lineX, redY, 10);
+  // Swap the current and next arrays for next generation
+  let temp = currentCells;
+  currentCells = nextCells;
+  nextCells = temp;
 }
